@@ -14,20 +14,29 @@ function App() {
   async function generateResponse() {
     setLoading(true);
     setAnswer("");
-    const response = await axios({
-      url: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyB0cfYoFXjxxJcF-vbvOAdXUKxAhhEVMUk",
-      method: "post",
-      data: {
-        contents: [
-          {
-            parts: [{ text: question }],
-          },
-        ],
-      },
-    });
-    const aiAnswer = response["data"]["candidates"][0]["content"]["parts"][0]["text"];
-    setAnswer(aiAnswer);
-    setHistory([...history, { question, answer: aiAnswer }]);
+    try {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        setAnswer("Error: API key not configured. Please set VITE_GEMINI_API_KEY in .env");
+        setLoading(false);
+        return;
+      }
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        {
+          contents: [
+            {
+              parts: [{ text: question }],
+            },
+          ],
+        }
+      );
+      const aiAnswer = response.data.candidates[0].content.parts[0].text;
+      setAnswer(aiAnswer);
+      setHistory([...history, { question, answer: aiAnswer }]);
+    } catch (error) {
+      setAnswer("Error: " + (error.response?.data?.error?.message || error.message));
+    }
     setLoading(false);
   }
 
